@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hệ Thống Tra Cứu Thông Tin - EduManager</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .nav-link { font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+        .table-readonly th { background-color: #212529; color: white; text-align: center; }
+        .table-tkb { border-collapse: collapse; width: 100%; }
+        .table-tkb th { text-align: center; border: 2px solid #343a40; font-weight: bold; background-color: #343a40; color: white; padding: 10px; }
+        .table-tkb td { border: 1px solid #6c757d; height: 75px; vertical-align: middle; text-align: center; font-size: 0.95rem; padding: 5px; }
+        .cell-filled { background-color: rgba(255, 255, 255, 0.95); font-weight: bold; color: #000; box-shadow: 0px 2px 5px rgba(0,0,0,0.15); border: 2px solid #fff !important; border-radius: 4px; }
+    </style>
+</head>
+<body class="bg-light">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm">
+        <div class="container">
+            <a class="navbar-brand text-info fw-bold" href="{{ url_for('index') }}">EduManager (Chỉ xem)</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMenu">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navMenu">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item"><a class="nav-link {% if page=='tkb' %}active text-warning{% endif %}" href="{{ url_for('index', page='tkb') }}">Thời Khóa Biểu</a></li>
+                    <li class="nav-item"><a class="nav-link {% if page=='hocvien' %}active text-warning{% endif %}" href="{{ url_for('index', page='hocvien') }}">Học Viên</a></li>
+                    <li class="nav-item"><a class="nav-link {% if page=='lophoc' %}active text-warning{% endif %}" href="{{ url_for('index', page='lophoc') }}">Lớp Học</a></li>
+                    <li class="nav-item"><a class="nav-link {% if page=='diemdanh' %}active text-warning{% endif %}" href="{{ url_for('index', page='diemdanh') }}">Điểm Danh</a></li>
+                    <li class="nav-item"><a class="nav-link {% if page=='hocphi' %}active text-warning{% endif %}" href="{{ url_for('index', page='hocphi') }}">Thu Học Phí</a></li>
+                </ul>
+                <a href="{{ url_for('admin') }}" class="btn btn-outline-light btn-sm fw-bold">Đăng Nhập Quản Trị &rarr;</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4 mb-5" style="max-width: 1350px;">
+        <div class="bg-white p-4 rounded shadow-sm border-top border-info border-4">
+            
+            {# ================= 1. TAB THỜI KHÓA BIỂU ================= #}
+            {% if page == 'tkb' %}
+                <h3 class="text-center fw-bold mb-4 text-uppercase text-dark">Thời Khóa Biểu Giảng Dạy</h3>
+                <div class="table-responsive">
+                    <table class="table-tkb">
+                        <thead>
+                            <tr>
+                                <th style="width: 6%;">Buổi</th><th style="width: 12%;">Thời gian</th>
+                                {% for thu_id, t in thu_trong_tuan.items() %}
+                                    <th style="width: 11%;">{{ t }}</th>
+                                {% endfor %}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for info in cai_dat_ca_hoc %}
+                                {% set ca_id = info['ca_id'] %}
+                                <tr style="background-color: {{ info['mau_sac'] }};">
+                                    {% if loop.index0 == 0 %}<td rowspan="2" class="fw-bold bg-white text-dark border-end-0">SÁNG</td>{% endif %}
+                                    {% if loop.index0 == 2 %}<td rowspan="2" class="fw-bold bg-white text-dark border-end-0">CHIỀU</td>{% endif %}
+                                    {% if loop.index0 == 4 %}<td class="fw-bold bg-white text-dark border-end-0">TỐI</td>{% endif %}
+                                    
+                                    <td class="fw-bold bg-light text-dark">
+                                        <span class="badge bg-secondary px-2 py-1 fs-6 shadow-sm">{{ info['thoi_gian'] }}</span>
+                                    </td>
+                                    
+                                    {% for thu_id in range(2, 9) %}
+                                        {% set content = tkb_data.get((thu_id, ca_id), '') %}
+                                        {% set class_highlight = 'cell-filled' if content else '' %}
+                                        <td>
+                                            <div class="h-100 d-flex align-items-center justify-content-center p-1 {{ class_highlight }}">
+                                                {{ content | replace('\n', '<br>') | safe }}
+                                            </div>
+                                        </td>
+                                    {% endfor %}
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+            {# ================= 2. TAB HỌC VIÊN ================= #}
+            {% elif page == 'hocvien' %}
+                <h4 class="fw-bold mb-3">Tra Cứu Danh Sách Học Viên</h4>
+                <div class="table-responsive">
+                    <table class="table table-striped table-bordered align-middle table-readonly">
+                        <thead>
+                            <tr><th>Mã HV</th><th>Họ và Tên</th><th>Ngày Sinh</th><th>Lớp Trường</th><th>SĐT</th><th>Trạng Thái</th></tr>
+                        </thead>
+                        <tbody>
+                            {% for hv in students %}
+                            <tr>
+                                <td><code>{{ hv['ma_hv'] }}</code></td>
+                                <td><strong>{{ hv['ho_ten'] }}</strong></td>
+                                <td>{{ hv['ngay_sinh'] or '' }}</td>
+                                <td>{{ hv['lop_truong'] or '' }}</td>
+                                <td>{{ hv['so_dien_thoai'] or '' }}</td>
+                                <td><span class="badge bg-{{ 'success' if hv['trang_thai']=='Đang học' else 'danger' }}">{{ hv['trang_thai'] }}</span></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+            {# ================= 3. TAB LỚP HỌC ================= #}
+            {% elif page == 'lophoc' %}
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h4 class="fw-bold mb-0">Thông Tin Lớp Học</h4>
+                    <a href="{{ url_for('export_excel_classes') }}" class="btn btn-success btn-sm fw-bold shadow-sm">Xuất Excel D.Sách Lớp</a>
+                </div>
+                <div class="alert alert-info py-2 small">Nhấn vào nút xanh <strong>Mã Lớp</strong> để xem danh sách học sinh của lớp đó.</div>
+                <div class="table-responsive">
+                    <table class="table table-bordered align-middle table-readonly">
+                        <thead>
+                            <tr><th>Mã Lớp</th><th>Tên Lớp / Môn</th><th>Giáo Viên</th><th>Lịch Học</th><th>Học Phí</th></tr>
+                        </thead>
+                        <tbody>
+                            {% for lop in all_classes %}
+                            <tr>
+                                <td>
+                                    <button class="btn btn-outline-primary btn-sm fw-bold" data-bs-toggle="modal" data-bs-target="#dsLop{{ lop['id'] }}">
+                                        {{ lop['ma_lop'] }}
+                                    </button>
+
+                                    <div class="modal fade" id="dsLop{{ lop['id'] }}" tabindex="-1">
+                                        <div class="modal-dialog modal-lg">
+                                            <div class="modal-content">
+                                                <div class="modal-header bg-dark text-white">
+                                                    <h5 class="modal-title fw-bold">Danh sách học sinh lớp: {{ lop['ten_lop'] }}</h5>
+                                                    <a href="{{ url_for('export_excel_students', ma_lop=lop['ma_lop']) }}" class="btn btn-success btn-sm ms-auto me-3 fw-bold">Xuất Excel Học Viên</a>
+                                                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                                </div>
+                                                <div class="modal-body text-start">
+                                                    <table class="table table-bordered table-striped">
+                                                        <thead><tr><th>STT</th><th>Mã HV</th><th>Họ và Tên</th><th>SĐT</th><th>Trạng thái</th></tr></thead>
+                                                        <tbody>
+                                                            {% set hss = class_students_map.get(lop['ma_lop'], []) %}
+                                                            {% if hss %}
+                                                                {% for hs in hss %}
+                                                                    <tr>
+                                                                        <td>{{ loop.index }}</td>
+                                                                        <td><code>{{ hs['ma_hv'] }}</code></td>
+                                                                        <td><strong>{{ hs['ho_ten'] }}</strong></td>
+                                                                        <td>{{ hs['so_dien_thoai'] or '' }}</td>
+                                                                        <td>{{ hs['trang_thai'] }}</td>
+                                                                    </tr>
+                                                                {% endfor %}
+                                                            {% else %}
+                                                                <tr><td colspan="5" class="text-center text-danger">Lớp chưa có học sinh nào.</td></tr>
+                                                            {% endif %}
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td><strong>{{ lop['ten_lop'] }}</strong></td>
+                                <td>{{ lop['giao_vien'] or '' }}</td>
+                                <td>{{ lop['lich_hoc'] or '' }}</td>
+                                <td class="text-success fw-bold">{{ lop['hoc_phi'] | currency }} đ</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+            {# ================= 4. TAB ĐIỂM DANH ================= #}
+            {% elif page == 'diemdanh' %}
+                <h4 class="fw-bold mb-3">Bảng Điểm Danh Lớp</h4>
+                <form method="GET" action="{{ url_for('index') }}" class="row g-2 mb-4 bg-light p-3 rounded border shadow-sm">
+                    <input type="hidden" name="page" value="diemdanh">
+                    <div class="col-md-5">
+                        <label class="small fw-bold">Chọn Lớp</label>
+                        <select name="filter_lop" class="form-select" onchange="this.form.submit()">
+                            {% for lop in all_classes %}
+                                <option value="{{ lop['ma_lop'] }}" {% if sel_lop == lop['ma_lop'] %}selected{% endif %}>{{ lop['ten_lop'] }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="small fw-bold">Tháng/Năm</label>
+                        <input type="month" name="filter_thang" value="{{ f_thang_input }}" class="form-control" onchange="this.form.submit()">
+                    </div>
+                    <div class="col-md-3 d-flex align-items-end"><button type="submit" class="btn btn-secondary w-100">Tra Cứu</button></div>
+                </form>
+
+                <div class="table-responsive">
+                    <table class="table table-bordered text-center align-middle table-readonly table-sm">
+                        <thead>
+                            <tr>
+                                <th>Mã HV</th><th class="text-start">Họ Tên</th>
+                                {% for i in range(1, 9) %}
+                                    <th>Buổi {{ i }}<br><span class="badge bg-secondary">{{ saved_dates.get('ngay_' ~ i) or '--/--' }}</span></th>
+                                {% endfor %}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for shv in students %}
+                                {% set arr_buoi = attendance_map.get(shv['ma_hv'], ['', '', '', '', '', '', '', '']) %}
+                                <tr>
+                                    <td><code>{{ shv['ma_hv'] }}</code></td>
+                                    <td class="text-start"><strong>{{ shv['ho_ten'] }}</strong></td>
+                                    {% for b in range(8) %}
+                                        {% set status = arr_buoi[b] if b < arr_buoi|length else '' %}
+                                        <td>
+                                            {% if status == 'x' %}
+                                                <span class="text-success fw-bold">Có</span>
+                                            {% elif status == 'v' %}
+                                                <span class="text-warning fw-bold">Phép</span>
+                                            {% elif status == 'k' %}
+                                                <span class="text-danger fw-bold">Vắng</span>
+                                            {% else %}
+                                                <span class="text-muted">-</span>
+                                            {% endif %}
+                                        </td>
+                                    {% endfor %}
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+            {# ================= 5. TAB THU HỌC PHÍ ================= #}
+            {% elif page == 'hocphi' %}
+                <h4 class="fw-bold mb-3">Tình Trạng Đóng Học Phí</h4>
+                <form method="GET" action="{{ url_for('index') }}" class="row g-2 mb-4 bg-light p-3 rounded shadow-sm border">
+                    <input type="hidden" name="page" value="hocphi">
+                    <div class="col-md-5">
+                        <label class="small fw-bold">Chọn Lớp</label>
+                        <select name="fee_lop" class="form-select" onchange="this.form.submit()">
+                            {% for lop in all_classes %}
+                                <option value="{{ lop['ma_lop'] }}" {% if fee_lop == lop['ma_lop'] %}selected{% endif %}>{{ lop['ten_lop'] }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="small fw-bold">Tháng/Năm</label>
+                        <input type="month" name="fee_thang" value="{{ f_thang_input }}" class="form-control" onchange="this.form.submit()">
+                    </div>
+                    <div class="col-md-3 d-flex align-items-end"><button type="submit" class="btn btn-dark w-100">Lọc Dữ Liệu</button></div>
+                </form>
+
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover align-middle table-readonly">
+                        <thead><tr><th>Mã HV</th><th>Học Viên</th><th>Phải Đóng</th><th>Đã Đóng</th><th>Còn Nợ</th><th>Trạng Thái</th></tr></thead>
+                        <tbody>
+                            {% for rec in records %}
+                                {% set no = rec['hoc_phi_phai_dong'] - rec['da_dong'] %}
+                                <tr>
+                                    <td><code>{{ rec['ma_hv'] }}</code></td>
+                                    <td><strong>{{ rec['ho_ten'] }}</strong></td>
+                                    <td class="text-secondary">{{ rec['hoc_phi_phai_dong'] | currency }} đ</td>
+                                    <td class="text-success fw-bold">{{ rec['da_dong'] | currency }} đ</td>
+                                    <td class="text-danger fw-bold">{{ no | currency }} đ</td>
+                                    <td>
+                                        {% if rec['da_dong'] > 0 %}
+                                            <span class="badge bg-secondary">{{ rec['hinh_thuc'] or 'Đã nộp' }}</span>
+                                        {% else %}
+                                            <span class="text-muted small">Chưa đóng</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% endif %}
+
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
